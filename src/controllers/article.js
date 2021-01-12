@@ -60,7 +60,7 @@ exports.editArticleController = async (req, res, next) => {
     }
   } catch (error) {
     console.log("editArticleController:", error);
-    res.status(500).json({ success: false, errors: "Internal Server Error" });
+     res.status(500).json({ success: false, errors: "Internal Server Error" });
     next(error);
   }
 };

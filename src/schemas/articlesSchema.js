@@ -6,9 +6,9 @@ const ArticleSchema = new Schema({
   subHead: String,
   content:   String,
   category:   String,
-  author: [{ name: String, img: String }],
+  author: { type: Object, default: {name: "John Doe", img: "https://ui-avatars.com/api/?name=John+Doe"} },
   cover: String,
-});
+},   { timestamps: true });
 
 
 module.exports = mongoose.model("Article", ArticleSchema)
