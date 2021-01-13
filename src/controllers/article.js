@@ -1,10 +1,18 @@
 const express = require("express");
+const mongoose = require("mongoose");
+const q2m = require("query-to-mongo");
 const ArticleSchema = require("../schemas/articlesSchema"); //importing the model, the wrapper of the schema
 
 exports.getArticlesController = async (req, res, next) => {
   try {
-    const articles = await ArticleSchema.find();
-    res.send(articles);
+
+    const query = q2m(req.query);
+    const total = await ArticleSchema.countDocuments(query.criteria); 
+    const articles = await ArticleSchema.find(query.criteria, query.options.fields)
+    .skip(query.options.skip)
+    .limit(query.options.limit)
+    .sort(query.options.sort);
+    res.send({ links: query.links("/articles", total), articles });
   } catch (error) {
     console.log("getArticlesController error:", error);
     res.status(500).json({ success: false, errors: "Internal Server Error" });

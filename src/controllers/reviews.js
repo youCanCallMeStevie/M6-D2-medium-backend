@@ -1,5 +1,6 @@
 const express = require("express");
-
+const mongoose = require("mongoose");
+const q2m = require("query-to-mongo");
 const ReviewsSchema = require("../schemas/reviewsSchema"); //importing the model, the wrapper of the schema
 const ArticleSchema = require("../schemas/articlesSchema"); //importing the model, the wrapper of the schema
 
@@ -56,18 +57,18 @@ exports.postReviewController = async (req, res, next) => {
     const articleId = req.params.id;
     console.log("article id", articleId);
 
-    const articleReviewed = await ArticleSchema.findById(articleId, { _id: 0 });
-    const reviewToInsert = { ...articleReviewed, date: new Date() };
+    // const articleReviewed = await ArticleSchema.findById(articleId, { _id: 0 });
+    // const reviewToInsert = { ...articleReviewed, date: new Date() };
     const updated = await ArticleSchema.findByIdAndUpdate(
         articleId,
       {
         $push: {
-          reviews: reviewToInsert,
+          reviews: newReview,
         },
       },
       { runValidators: true, new: true }
     );
-    res.status(201).json({ success: true, reviewAdded: updated });
+    res.status(201).json({ success: true, reviewAdded: newReview });
 } catch (error) {
     console.log("postReviewController: ", error);
     res.status(500).json({ success: false, errors: "Internal Server Error" });
@@ -76,48 +77,57 @@ exports.postReviewController = async (req, res, next) => {
 };
 
 exports.editReviewController = async (req, res, next) => {
-  try {
-    const { reviews } = await ReviewsSchema.findOne(
-      {
-        _id: mongoose.Types.ObjectId(req.params.id),
-      },
-      {
-        _id: 0,
-        reviews: {
-          $elemMatch: { _id: mongoose.Types.ObjectId(req.params.reviewId) },
-        },
-      }
-    );
-    if (reviews && reviews.length > 0) {
-      const oldReview = reviews[0].toObject();
-      const modifiedReview = { ...oldReview, ...req.body };
-      await ReviewsSchema.findOneAndUpdate(
+    try {
+      const review = await ReviewsSchema.findByIdAndUpdate(
+          req.params.reviewId,
+          req.body,
+          {
+            runValidators: true,
+            new: true,
+          }
+        );
+      const { reviews } = await ArticleSchema.findOne(
         {
           _id: mongoose.Types.ObjectId(req.params.id),
-          "reviews._id": mongoose.Types.ObjectId(req.params.bookId),
         },
-        { $set: { "reviews.$": modifiedReview } },
         {
-          runValidators: true,
-          new: true,
+          _id: 0,
+          reviews: {
+            $elemMatch: { _id: mongoose.Types.ObjectId(req.params.reviewId) },
+          },
         }
       );
-      res.status(201).json({ success: true, data: modifiedReview });
-    } else {
-      const error = new Error(`Review with id ${req.params.id} not found`);
-      error.httpStatusCode = 404;
+      if (reviews && reviews.length > 0) {
+        const oldReview = reviews[0].toObject();
+        const modifiedReview = { ...oldReview, ...req.body };
+        await ArticleSchema.findOneAndUpdate(
+          {
+            _id: mongoose.Types.ObjectId(req.params.id),
+            "reviews._id": mongoose.Types.ObjectId(req.params.reviewId),
+          },
+          { $set: { "reviews.$": modifiedReview } },
+          {
+            runValidators: true,
+            new: true,
+          }
+        );
+        res.status(201).json({ success: true, data: modifiedReview });
+      } else {
+        const error = new Error(`Review with id ${req.params.id} not found`);
+        error.httpStatusCode = 404;
+        next(error);
+      }
+    } catch (error) {
+      console.log("editReviewController: ", error);
+      res.status(500).json({ success: false, errors: "Internal Server Error" });
       next(error);
     }
-  } catch (error) {
-    console.log("editReviewController: ", error);
-    res.status(500).json({ success: false, errors: "Internal Server Error" });
-    next(error);
-  }
-};
+  };
 
 exports.deleteReviewController = async (req, res, next) => {
   try {
-    const modifiedArticle = await ReviewsSchema.findByIdAndUpdate(
+    const review = await ReviewsSchema.findByIdAndDelete(req.params.reviewId); 
+    const modifiedArticle = await ArticleSchema.findByIdAndUpdate(
       req.params.id,
       {
         $pull: {

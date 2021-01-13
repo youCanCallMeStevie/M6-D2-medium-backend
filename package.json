@@ -27,6 +27,7 @@
     "express": "^4.17.1",
     "express-list-endpoints": "^5.0.0",
     "mongoose": "^5.11.11",
+    "query-to-mongo": "^0.10.1",
     "uniqid": "^5.2.0"
   }
 }
