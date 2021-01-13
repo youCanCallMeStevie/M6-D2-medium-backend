@@ -49,11 +49,17 @@ exports.getOneReviewController = async (req, res, next) => {
 
 exports.postReviewController = async (req, res, next) => {
   try {
-    const articleId = req.body.id;
+    const newReview = new ReviewsSchema(req.body);
+    const { _id } = await newReview.save();
+    console.log("new review", newReview);
+
+    const articleId = req.params.id;
+    console.log("article id", articleId);
+
     const articleReviewed = await ArticleSchema.findById(articleId, { _id: 0 });
     const reviewToInsert = { ...articleReviewed, date: new Date() };
-    const updated = await ReviewsSchema.findByIdAndUpdate(
-      req.params.id,
+    const updated = await ArticleSchema.findByIdAndUpdate(
+        articleId,
       {
         $push: {
           reviews: reviewToInsert,
@@ -62,7 +68,7 @@ exports.postReviewController = async (req, res, next) => {
       { runValidators: true, new: true }
     );
     res.status(201).json({ success: true, reviewAdded: updated });
-  } catch (error) {
+} catch (error) {
     console.log("postReviewController: ", error);
     res.status(500).json({ success: false, errors: "Internal Server Error" });
     next(error);
