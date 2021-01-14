@@ -1,28 +1,31 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const q2m = require("query-to-mongo");
-const ArticleSchema = require("../schemas/articlesSchema"); //importing the model, the wrapper of the schema
+const ArticleModel = require("../schemas/articlesSchema"); //importing the model, the wrapper of the schema
 
 exports.getArticlesController = async (req, res, next) => {
   try {
 
     const query = q2m(req.query);
-    const total = await ArticleSchema.countDocuments(query.criteria); 
-    const articles = await ArticleSchema.find(query.criteria, query.options.fields)
+    const total = await ArticleModel.countDocuments(query.criteria); 
+    const articles = await ArticleModel.find(query.criteria, query.options.fields)
     .skip(query.options.skip)
     .limit(query.options.limit)
-    .sort(query.options.sort);
+    .sort(query.options.sort)
+    .populate("author");
+
     res.send({ links: query.links("/articles", total), articles });
   } catch (error) {
     console.log("getArticlesController error:", error);
     res.status(500).json({ success: false, errors: "Internal Server Error" });
+    next(error)
   }
 };
 
 exports.getOneArticleController = async (req, res, next) => {
   try {
     const { id } = req.params.id;
-    const foundArticle = await ArticleSchema(id);
+    const foundArticle = await ArticleModel.findArticleWithAuthor(id)
     if (foundArticle) {
       res.status(200).json({ success: true, article: foundArticle });
     } else {
@@ -35,10 +38,10 @@ exports.getOneArticleController = async (req, res, next) => {
     res.status(500).json({ success: false, errors: "Internal Server Error" });
   }
 };
-
+ 
 exports.createNewArticleController = async (req, res, next) => {
   try {
-    const newArticle = new ArticleSchema(req.body); //creating new instance, passing from the request body
+    const newArticle = new ArticleModel(req.body); //creating new instance, passing from the request body
     const { _id } = await newArticle.save(); //save needs to be async as it is returning a promise, save is similar to write. when we save the record in the db, the new document will be returned
 
     res.status(201).json({ success: true, _id: _id });
@@ -51,7 +54,7 @@ exports.createNewArticleController = async (req, res, next) => {
 
 exports.editArticleController = async (req, res, next) => {
   try {
-    const article = await ArticleSchema.findByIdAndUpdate(
+    const article = await ArticleModel.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
@@ -75,7 +78,7 @@ exports.editArticleController = async (req, res, next) => {
 
 exports.deleteArticleController = async (req, res, next) => {
   try {
-    const article = await ArticleSchema.findByIdAndDelete(req.params.id);
+    const article = await ArticleModel.findByIdAndDelete(req.params.id);
     if (article) {
       res.status(201).json({ success: true, data: "deleted" });
     } else {

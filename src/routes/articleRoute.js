@@ -1,4 +1,5 @@
 const express = require("express");
+
 const router = express.Router();
 const {
   getArticlesController,
@@ -22,6 +23,7 @@ router.post("/", createNewArticleController);
 router.put("/:id", editArticleController);
 router.delete("/:id", deleteArticleController);
 router.get("/:id/reviews", getReviewsController);
+
 
 router.get("/:id/reviews/:reviewId", getOneReviewController);
 router.post("/:id", postReviewController);

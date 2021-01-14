@@ -58,7 +58,7 @@ exports.postReviewController = async (req, res, next) => {
     console.log("article id", articleId);
 
     // const articleReviewed = await ArticleSchema.findById(articleId, { _id: 0 });
-    // const reviewToInsert = { ...articleReviewed, date: new Date() };
+    // const reviewToInsert = { ...articleReviewed, date: new Date() };   both lines are same as the below
     const updated = await ArticleSchema.findByIdAndUpdate(
         articleId,
       {
@@ -68,7 +68,7 @@ exports.postReviewController = async (req, res, next) => {
       },
       { runValidators: true, new: true }
     );
-    res.status(201).json({ success: true, reviewAdded: newReview });
+    res.status(201).json({ success: true, reviewAdded: _id });
 } catch (error) {
     console.log("postReviewController: ", error);
     res.status(500).json({ success: false, errors: "Internal Server Error" });

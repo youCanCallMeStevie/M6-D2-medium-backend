@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = require("mongoose");
+//const { Schema, model } = require("mongoose") same as above, but we're only using model in this case
+
 
 const ReviewsSchema = new Schema(
   {
